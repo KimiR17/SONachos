@@ -8,6 +8,7 @@
 #	you need to point ARCHDIR at the cross-compiler directory, e.g.
 #		setenv ARCHDIR ../mips-x86.win32-xgcc
 
+ARCHDIR = "/home/jvvto/Dropbox/Faculdade/Sistemas Operacionais/mips-x86.linux=xgcc"
 # you need to point to the right executables
 GCCDIR = $(ARCHDIR)/mips-
 
