@@ -49,6 +49,7 @@ public class Condition2 {
     }
 
     /**
+     * Atomically release the associated lock and go to sleep o
      * Wake up at most one thread sleeping on this condition variable. The
      * current thread must hold the associated lock.
      */

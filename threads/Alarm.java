@@ -35,8 +35,9 @@ public class Alarm {
 	    
 	KThread.currentThread().yield();
 	
+	boolean interruption = Machine.interrupt.disable();
 	//Iterates through the thread queue in search of a thread to be awakened
-	for(Long IT = 0; IT < ThreadTimer.size(); IT++)
+	for(Long IT = 0; IT < ThreadTimer.size(); IT++){
 		if(ThreadTimer.get(IT) <= Machine.timer.getTime()){
 			//Awaken the thread
 			KThread thread = WaitingThread.get(IT);
@@ -46,8 +47,10 @@ public class Alarm {
 			//Unblock the thread
 			thread.ready();
 		}
-		
 	}
+	
+	Machine.interrupt.restore(interruption);
+	
     }
 
     /**
@@ -66,8 +69,19 @@ public class Alarm {
      */
     public void waitUntil(long x) {
 	// for now, cheat just to get something working (busy waiting is bad)
-	long wakeTime = Machine.timer().getTime() + x;
-	while (wakeTime > Machine.timer().getTime())
-	    KThread.yield();
+// 	long wakeTime = Machine.timer().getTime() + x;
+// 	while (wakeTime > Machine.timer().getTime())
+// 	    KThread.yield();
+	
+	    boolean interrupt = Machine.interrupt().disable();
+	    
+	    
+	    //This implementation works because the threads will always 
+	    WaitingThread.add(KThread.currentThread());
+	    ThreadTimer.add(Machine.timer().getTime()+x);
+	    
+	    KThread.currentThread().sleep()
+	    
+	    Machine.interrupt.restore(interrupt);
     }
 }
