@@ -77,6 +77,14 @@ public class Condition2 {
      */
     public void wakeAll() {
 	Lib.assertTrue(conditionLock.isHeldByCurrentThread());
+	
+	boolean interruption = Machine.interrupt().disable();
+	for(Integer i = 0 ; i < WaitingThreadList.size() ; i++){
+		KThread thread = WaitingThreadList.get(i);
+		thread.ready();
+	}
+	
+	Machine.interrupt().restore(interruption);
     }
 
     private Lock conditionLock;

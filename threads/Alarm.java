@@ -21,7 +21,7 @@ public class Alarm {
 	Machine.timer().setInterruptHandler(new Runnable() {
 		public void run() { timerInterrupt(); }
 	    });
-	this.WaitingThread = new ArrayList<KThread>();
+	this.WaitingThreads = new ArrayList<KThread>();
 	this.ThreadTimer = new ArrayList<Long>();
     }
 
@@ -35,21 +35,21 @@ public class Alarm {
 	    
 	KThread.currentThread().yield();
 	
-	boolean interruption = Machine.interrupt.disable();
+	boolean interruption = Machine.interrupt().disable();
 	//Iterates through the thread queue in search of a thread to be awakened
-	for(Long IT = 0; IT < ThreadTimer.size(); IT++){
-		if(ThreadTimer.get(IT) <= Machine.timer.getTime()){
+	for(Integer IT = 0; IT < ThreadTimer.size(); IT++){
+		if(ThreadTimer.get(IT) <= Machine.timer().getTime()){
 			//Awaken the thread
-			KThread thread = WaitingThread.get(IT);
+			KThread thread = WaitingThreads.get(IT);
 			//Cleanup the lists
-			WaitingThread.remove(IT);
+			WaitingThreads.remove(IT);
 			ThreadTimer.remove(IT);
 			//Unblock the thread
 			thread.ready();
 		}
 	}
 	
-	Machine.interrupt.restore(interruption);
+	Machine.interrupt().restore(interruption);
 	
     }
 
@@ -77,11 +77,11 @@ public class Alarm {
 	    
 	    
 	    //This implementation works because the threads will always 
-	    WaitingThread.add(KThread.currentThread());
+	    WaitingThreads.add(KThread.currentThread());
 	    ThreadTimer.add(Machine.timer().getTime()+x);
 	    
-	    KThread.currentThread().sleep()
+	    KThread.currentThread().sleep();
 	    
-	    Machine.interrupt.restore(interrupt);
+	    Machine.interrupt().restore(interrupt);
     }
 }
