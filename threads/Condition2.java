@@ -1,7 +1,7 @@
 package nachos.threads;
 
 import nachos.machine.*;
-
+import java.util.*;
 /**
  * An implementation of condition variables that disables interrupt()s for
  * synchronization.
@@ -12,6 +12,7 @@ import nachos.machine.*;
  * @see	nachos.threads.Condition
  */
 public class Condition2 {
+	private ArrayList<KThread> WaitingThreadList;
     /**
      * Allocate a new condition variable.
      *
@@ -22,6 +23,7 @@ public class Condition2 {
      */
     public Condition2(Lock conditionLock) {
 	this.conditionLock = conditionLock;
+	this.WaitingThreadList = new ArrayList<KThread>();
     }
 
     /**
@@ -32,9 +34,17 @@ public class Condition2 {
      */
     public void sleep() {
 	Lib.assertTrue(conditionLock.isHeldByCurrentThread());
-
+	
+	//Disabling interrupts to provide atomicity
+	boolean interruption = Machine.interrupt().disable();
+	WaitingThreadList.add(KThread.currentThread());
+	
 	conditionLock.release();
-
+	
+	//Block current thread
+	KThread.currentThread().sleep();
+	Machine.interrupt().restore(interruption);
+	
 	conditionLock.acquire();
     }
 
@@ -44,6 +54,20 @@ public class Condition2 {
      */
     public void wake() {
 	Lib.assertTrue(conditionLock.isHeldByCurrentThread());
+	
+	//Again disabling interruptions to provide atomicity
+	boolean interruption = Machine.interrupt().disable();
+	
+	//If there are threads to be awakened in the list, get the first one and unblock it
+	if( !( WaitingThreadList.isEmpty() ) ){
+		KThread thread = WaitingThreadList.get(0);
+		thread.ready();
+	}
+	
+	Machine.interrupt().restore(interruption);
+		
+	
+	
     }
 
     /**

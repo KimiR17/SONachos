@@ -1,7 +1,7 @@
 package nachos.threads;
 
 import nachos.machine.*;
-
+import java.util.*;
 /**
  * Uses the hardware timer to provide preemption, and to allow threads to sleep
  * until a certain time.
@@ -14,10 +14,15 @@ public class Alarm {
      * <p><b>Note</b>: Nachos will not function correctly with more than one
      * alarm.
      */
+    private ArrayList<KThread> WaitingThreads;
+    private ArrayList<Long> ThreadTimer;
+    
     public Alarm() {
 	Machine.timer().setInterruptHandler(new Runnable() {
 		public void run() { timerInterrupt(); }
 	    });
+	this.WaitingThread = new ArrayList<KThread>();
+	this.ThreadTimer = new ArrayList<Long>();
     }
 
     /**
@@ -27,7 +32,22 @@ public class Alarm {
      * that should be run.
      */
     public void timerInterrupt() {
+	    
 	KThread.currentThread().yield();
+	
+	//Iterates through the thread queue in search of a thread to be awakened
+	for(Long IT = 0; IT < ThreadTimer.size(); IT++)
+		if(ThreadTimer.get(IT) <= Machine.timer.getTime()){
+			//Awaken the thread
+			KThread thread = WaitingThread.get(IT);
+			//Cleanup the lists
+			WaitingThread.remove(IT);
+			ThreadTimer.remove(IT);
+			//Unblock the thread
+			thread.ready();
+		}
+		
+	}
     }
 
     /**

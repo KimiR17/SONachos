@@ -1,6 +1,7 @@
 package nachos.threads;
 
 import nachos.machine.*;
+import java.util.*;
 
 /**
  * A KThread is a thread that can be used to execute Nachos kernel code. Nachos
@@ -203,7 +204,7 @@ public class KThread {
 
 	while( IT < MarkedForWake.size() ){//Iterate through the thread wakeup list
 
-		if( currentThread.compareTo ( MarkedForJoin (IT) ) == 0 ){//Current Thread is join-marked
+		if( currentThread.compareTo ( MarkedForJoin.get(IT) ) == 0 ){//Current Thread is join-marked
 			MarkedForWake.get(IT).ready();//Waking up the thread that was waiting
 			MarkedForWake.remove(IT);
 			MarkedForJoin.remove(IT);
