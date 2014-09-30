@@ -1,3 +1,21 @@
+commit 9539f7f0e24adca50cd12d9737e6eab72aee431f
+Author: jvvto <jvvtdoliveira@inf.ufpel.edu.br>
+Date:   Mon Sep 29 15:14:32 2014 -0300
+
+    Fixed some compilation errors and wrong types
+
+commit b10d8bd4f99a6b3f5872455d509f90b941612491
+Author: jvvto <jvvtdoliveira@inf.ufpel.edu.br>
+Date:   Mon Sep 29 14:56:59 2014 -0300
+
+    Final Implementation of Alarm class
+
+commit 9c2c3cdd08971d08d59699e8c4eb5a99fec4ca25
+Author: jvvto <jvvtdoliveira@inf.ufpel.edu.br>
+Date:   Mon Sep 29 14:33:16 2014 -0300
+
+    Added and fixed condition2 assignment
+
 commit 58d610adc413334071ab742801d7560ed6d1297d
 Author: jvvto <jvvtdoliveira@inf.ufpel.edu.br>
 Date:   Tue Sep 23 12:06:24 2014 -0300

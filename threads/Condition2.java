@@ -37,15 +37,18 @@ public class Condition2 {
 	
 	//Disabling interrupts to provide atomicity
 	boolean interruption = Machine.interrupt().disable();
+	
+	//Thread must be appended to the list
 	WaitingThreadList.add(KThread.currentThread());
 	
 	conditionLock.release();
 	
 	//Block current thread
 	KThread.currentThread().sleep();
-	Machine.interrupt().restore(interruption);
 	
 	conditionLock.acquire();
+	
+	Machine.interrupt().restore(interruption);
     }
 
     /**
@@ -59,7 +62,7 @@ public class Condition2 {
 	//Again disabling interruptions to provide atomicity
 	boolean interruption = Machine.interrupt().disable();
 	
-	//If there are threads to be awakened in the list, get the first one and unblock it
+	//If there are threads to be awakened(list is not empty) in the list, get the first one and unblock it
 	if( !( WaitingThreadList.isEmpty() ) ){
 		KThread thread = WaitingThreadList.get(0);
 		thread.ready();
@@ -79,6 +82,8 @@ public class Condition2 {
 	Lib.assertTrue(conditionLock.isHeldByCurrentThread());
 	
 	boolean interruption = Machine.interrupt().disable();
+	
+	//Iterate through the whole list awakening every thread sequentially
 	for(Integer i = 0 ; i < WaitingThreadList.size() ; i++){
 		KThread thread = WaitingThreadList.get(i);
 		thread.ready();
