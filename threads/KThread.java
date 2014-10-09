@@ -306,12 +306,8 @@ public class KThread {
 	    Lib.assertTrue(this!=currentThread); // Thread can't terminate itself
 
 	    if( !( this.status == statusFinished ) ) {//Thread has not finished its execution yet, so it needs to be marked for a late sleep
-
 		MarkedForJoin.add(this);
 		MarkedForWake.add(this.currentThread);
-
-
-
 	    }
     }
 
