@@ -92,6 +92,35 @@ public class Communicator {
      * @return	the integer transferred.
      */    
     public int listen() {
+	//Get the mutex lock
+	communicator_mutex.acquire();
+	
+	//Sleeps the condition representing the listener has left
+	while(this.state == 2){ this.conditions[1].sleep(); }
+	
+	//Transitions into listener ready state and wakes the listener has arrived condition
+	this.state = 2;
+	this.conditions[0].wake();
+	
+	
+	//While there is not a word to be read, waits for the word to be produced
+	while(this.state != 0){
+		this.conditions[3].sleep();
+	}
+	
+	//After knowing that there is a word to be read, signals the word read condition
+	Integer received_word = this.my_word;
+	this.conditions[4].wake();
+	
+	//Transition back to initial state
+	this.state = 3;
+	
+	//Awakes the listener has left condition
+	this.conditions[1].wake();
+	
+	communicator_mutex.release();
+	
+    
 	return 0;
     }
 }
