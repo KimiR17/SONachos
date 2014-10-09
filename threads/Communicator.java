@@ -12,11 +12,12 @@ import nachos.machine.*;
 public class Communicator {
 	
     //*Communicator States
-    //* 0 - There is a word to be read
+    //* 0 - There is a word ready
     //* 1 - There is a speaker to be heard
     //* 2 - There is a listener to be spoken to
     //* 3 - Starting State 
     private Integer state;
+    private Integer my_word;
     
     
     
@@ -52,7 +53,36 @@ public class Communicator {
      * @param	word	the integer to transfer.
      */
     public void speak(int word) {
+	    //Get the mutex lock 
+	    communicator_mutex.acquire();
+	    while(this.state == 1){//While state signals that there is a speaker to be heard	    
+		this.conditions[2].sleep();    //Sleeps the speaker has left condition 
+	    }
 	    
+	    //Transitions into the speaker to be heard state 
+	    this.state = 1;
+	    
+	    //Now that we have a speaker, wait for a listener to arrive
+	    while(this.state != 2){//Listener has arrived state
+		    this.conditions[0].sleep();//Sleeps the listener has arrived thread
+	    }
+	    
+	    //Now that we have a listener, i'll produce my word
+	    this.my_word = word;
+	    this.state = 0; //Transitions into word ready state
+	    this.conditions[3].wake()//Wakes the word ready condition
+	    
+	    //Now that the word has been produced and the machine has transitioned, wait for the word to be consumed
+	    while(this.state == 0){
+		    this.conditions[4].sleep(); //Sleeps the word has been consumed condition
+	    }
+	    
+	    //Now that the communicator has spoken, transition back to the initial state and signal that the speaker has left
+	    this.state = 3;
+	    this.condition[2].wake();
+	    
+	    //Release the lock
+	    communicator_mutex.release();
     }
 
     /**
