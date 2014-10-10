@@ -92,5 +92,8 @@ public class Condition2 {
 	Machine.interrupt().restore(interruption);
     }
 
+    public void selfTest(){
+	    Condition2Test.start();
+    }
     private Lock conditionLock;
 }

@@ -12,10 +12,12 @@ import nachos.machine.*;
 public class Communicator {
 	
     //*Communicator States
-    //* 0 - There is a word ready
-    //* 1 - There is a speaker to be heard
-    //* 2 - There is a listener to be spoken to
-    //* 3 - Starting State 
+    //* 0 - There is a speaker without a listener ready!
+    //* 1 - There is a listener without a speaker ready!
+    //* 2 - There is both a listener and a speaker ready!
+	//* 3 - There is a word to be consumed
+	//* 4 - The word has been consumed
+    //* 5 - Initial/Reset state
     private Integer state;
     private Integer my_word;
     
@@ -23,21 +25,22 @@ public class Communicator {
     
     private Lock communicator_mutex;
     //*Conditions analogous to the communicator states
-    //* pos 0 - checks if the listener arrived
-    //* pos 1 - checks if the listener left
-    //* pos 2 - checks if the speaker has left
-    //* pos 3 - checks if the word is ready to be read
-    //* pos 4 - checks if the word has been read
-    private Condition2 conditions;
+    //* pos 0 - Listener arrived
+    //* pos 1 - Listener has left
+	//* pos 5 - Speaker has arrived
+    //* pos 2 - Speaker has left
+    //* pos 3 - Word is ready
+    //* pos 4 - Word has been read
+    private Condition2[] conditions;
     /**
      * Allocate a new communicator.
      */
     public Communicator() {
-	    this.state = 3;
+	    this.state = 5;
 	    
 	    this.communicator_mutex = new Lock();
-	    this.conditions = new Condition2[5];
-	    for(int i = 0 ; i < 5 ; i++){ this.conditions[i] = new Condition2(communicator_mutex); }
+	    this.conditions = new Condition2[6];
+	    for(int i = 0 ; i < 6 ; i++){ this.conditions[i] = new Condition2(communicator_mutex); }
 	    
 	    
     }
@@ -55,31 +58,39 @@ public class Communicator {
     public void speak(int word) {
 	    //Get the mutex lock 
 	    communicator_mutex.acquire();
-	    while(this.state == 1){//While state signals that there is a speaker to be heard	    
-		this.conditions[2].sleep();    //Sleeps the speaker has left condition 
-	    }
 	    
-	    //Transitions into the speaker to be heard state 
-	    this.state = 1;
-	    
-	    //Now that we have a speaker, wait for a listener to arrive
-	    while(this.state != 2){//Listener has arrived state
-		    this.conditions[0].sleep();//Sleeps the listener has arrived thread
-	    }
-	    
-	    //Now that we have a listener, i'll produce my word
-	    this.my_word = word;
-	    this.state = 0; //Transitions into word ready state
-	    this.conditions[3].wake()//Wakes the word ready condition
-	    
-	    //Now that the word has been produced and the machine has transitioned, wait for the word to be consumed
-	    while(this.state == 0){
-		    this.conditions[4].sleep(); //Sleeps the word has been consumed condition
-	    }
+	    if(this.state == 1){//There is already have a listener ready
+			//Transition into listener and speaker ready state
+			this.state = 2;
+			//Signals the speaker has arrived condition
+			this.conditions[5].wake();
+			//Signals the speaker has left condition
+			this.conditions[2].sleep();
+			//Produce my word
+			this.my_word = word;
+			//Transitions into word ready to be consumed state
+			this.state = 3;
+			//Signals that there is a word ready
+			this.conditions[3].wake();
+			//While the word is not yet consumed, sleep the word consumed condition
+			while(this.state == 4){
+				this.conditions[4].sleep(); //Sleeps the word has been consumed condition
+			}
+	    }else{
+		    //Transition into "Speaker without a listener" state
+		    this.state = 0;
+		    //Signals that the speaker has not left
+		    this.conditions[2].sleep();
+			
+			//While there isn't a listener ready to receive the word
+			while(this.state != 2){//Listener and speaker ready state
+				this.conditions[0].sleep();//Sleeps the listener has arrived condition
+			}
+		}
 	    
 	    //Now that the communicator has spoken, transition back to the initial state and signal that the speaker has left
-	    this.state = 3;
-	    this.condition[2].wake();
+	    this.state = 5;
+	    this.conditions[2].wake();
 	    
 	    //Release the lock
 	    communicator_mutex.release();
@@ -92,35 +103,55 @@ public class Communicator {
      * @return	the integer transferred.
      */    
     public int listen() {
-	//Get the mutex lock
-	communicator_mutex.acquire();
-	
-	//Sleeps the condition representing the listener has left
-	while(this.state == 2){ this.conditions[1].sleep(); }
-	
-	//Transitions into listener ready state and wakes the listener has arrived condition
-	this.state = 2;
-	this.conditions[0].wake();
-	
-	
-	//While there is not a word to be read, waits for the word to be produced
-	while(this.state != 0){
-		this.conditions[3].sleep();
-	}
-	
-	//After knowing that there is a word to be read, signals the word read condition
-	Integer received_word = this.my_word;
-	this.conditions[4].wake();
-	
-	//Transition back to initial state
-	this.state = 3;
-	
-	//Awakes the listener has left condition
-	this.conditions[1].wake();
-	
-	communicator_mutex.release();
-	
+		//Get the mutex lock
+		communicator_mutex.acquire();
+		
+		if(this.state == 0){//If there is a speaker waiting for a listener
+			//Transition into listener and speaker ready state
+			this.state = 2;
+			//Signals the listener has left condition
+			this.conditions[1].sleep();
+			//Wakes the listener has arrived condition
+			this.conditions[0].wake();
+			
+			//While there isn't a word ready to be consumed
+			while(this.state != 3){
+				//Signals the word is ready condition
+				this.conditions[3].sleep();
+			}
+			
+			//Now that there is a word ready to be consumed, consume it!
+			Integer received_word = this.my_word;
+			//Transition into word consumed state
+			this.state = 4;
+			//Signal the word has been consumed condition
+			this.conditions[4].wake();
+			
+		}else{
+			//There is not a speaker waiting for a listener
+			//Transition into listener without a speaker state
+			this.state = 1;
+			this.conditions[1].sleep();
+			
+			//While there isn't a listener and a speaker ready
+			while(this.state != 2){
+				this.conditions[5].sleep();//Sleeps the speaker has arrived condition
+			}
+		}	
+		
+		//Now that both parties have done their job
+		//Transition back to initial state
+		this.state = 5;		
+		//Awakes the listener has left condition
+		this.conditions[1].wake();
+		
+		communicator_mutex.release();
+		
+		return this.my_word;
+    }
     
-	return 0;
+    public void selfTest(){
+	    CommunicatorTest dummy = new CommunicatorTest();
+	    dummy.start();
     }
 }
